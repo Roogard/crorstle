@@ -44,5 +44,5 @@ Single game mode only. The old Beginner/Normal toggle is gone and the mode is ne
 
 - No em dashes in comments or text
 - Keep code clean and modularized
-- Signature at bottom-right: "Created by Stonedhawk (Rahul)" in 11px, #565656
+- Signature at bottom-right: "Created by Roogard" in 11px, #565656
 - All allowed guesses validated via O(m) TrieEngine structure

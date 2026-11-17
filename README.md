@@ -116,4 +116,4 @@ All dictionary data is sourced from public domains and licensed under UNLICENSE.
 
 ---
 
-Designed with ❤️ by **Stonedhawk (Rahul Shah)**. Star this repository if you enjoy playing!
+Designed with ❤️ by **Roogard**. Star this repository if you enjoy playing!
