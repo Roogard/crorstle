@@ -1,6 +1,15 @@
-# Wordle Clone
+# Crorstle
 
-A polished, browser-based Wordle clone with a dark theme, micro-animations, and O(m) trie-based word validation. Zero build steps required to run.
+A polished, browser-based Wordle-style daily puzzle with a dark theme, micro-animations, and O(m) trie-based word validation. Zero build steps required to run. Live at https://roogard.github.io/crorstle
+
+Single game mode only. The old Beginner/Normal toggle is gone and the mode is never shown in the UI.
+
+## Daily Answer
+
+- Puzzle number counts up from 1 starting 2026-11-16, and seeds a mulberry32 PRNG
+- 50% of days the answer is the full six letter CRORST and the secret 6th letter is in play
+- 50% of days the answer is one of the 360 five letter arrangements of C, O, R, R, S, T from CUSTOM_WORDS, with strict Wordle rules (five letter guesses, exact match to win)
+- Share text reads "Crorstle N x/6" plus the site URL
 
 ## File Structure
 
@@ -11,7 +20,7 @@ A polished, browser-based Wordle clone with a dark theme, micro-animations, and 
 
 ## Features
 
-- 6x5 grid of tiles (10x5 in Beginner mode)
+- 6x5 grid of tiles
 - Daily word selection deterministic by day-of-year + year
 - Letter evaluation: green (correct), yellow (wrong position), gray (absent)
 - Duplicate letter handling: exact matches first, then yellows up to remaining count

@@ -1,11 +1,13 @@
-# 🎮 Wordle Clone
+# 🎮 Crorstle
+
+**Play it live:** [roogard.github.io/crorstle](https://roogard.github.io/crorstle)
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://opensource.org/licenses/MIT)
 [![React](https://img.shields.io/badge/React-18-blue.svg)](https://react.dev/)
 [![CSS3](https://img.shields.io/badge/CSS3-Modular-orange.svg)](https://developer.mozilla.org/en-US/docs/Web/CSS)
 [![Trie Validation](https://img.shields.io/badge/Dictionary-Trie--Powered-green.svg)](https://github.com/stonedhawk/game-ready-dictionary)
 
-A high-performance, modular browser-based **Wordle Clone** featuring smooth micro-animations, comprehensive streaks and stats tracking, a custom "Beginners" mode, and **O(m) trie-powered word validation**.
+**Crorstle** is a high-performance, modular browser-based Wordle-style daily puzzle featuring smooth micro-animations, comprehensive streaks and stats tracking, and **O(m) trie-powered word validation**.
 
 Built with a modern visual design, premium typography, and responsive grid layouts, this clone is designed to look stunning on both desktop and mobile devices.
 
@@ -19,14 +21,12 @@ Built with a modern visual design, premium typography, and responsive grid layou
 
 - **⚡ Trie-Powered Validation**: Integrates a high-performance, pre-compiled Trie structure containing over **9,440 valid 5-letter guess words**, powered by the custom [game-ready-dictionary](https://github.com/stonedhawk/game-ready-dictionary) repository.
 - **✨ Professional Answer Pool**: Daily word selection deterministic by day-of-year + year, carefully filtered to **1,066 common, clean, non-obscure words** to ensure an enjoyable and fair puzzle solving experience.
-- **🛡️ Custom Game Modes**:
-  - **Normal Mode**: The classic 6 guesses to find the daily word.
-  - **Beginners Mode**: A relaxed, forgiving 10 guesses designed for casual players and children.
+- **🛡️ Classic Rules**: The classic 6 guesses to find the daily word.
 - **💫 Micro-Animations & Audio Cues**:
   - **Tile flip animations** with smooth 3D perspective rotations.
   - **Victory bounce animation** upon winning.
   - **Shake animations** and custom toasts on invalid guesses.
-- **📊 Streaks & Guess Distribution**: Persistent local-storage stats tracker storing played games, win ratios, active streaks, and guess frequency charts, isolated per game-mode.
+- **📊 Streaks & Guess Distribution**: Persistent local-storage stats tracker storing played games, win ratios, active streaks, and guess frequency charts.
 - **📋 Social Sharing**: Share your gaming achievements easily via a clipboard-copyable emoji-grid structure representing your color matches.
 - **⌨️ Dual-Input Keyboard**: Color-coded on-screen QWERTY keyboard with physical keyboard listener integration.
 
@@ -37,7 +37,7 @@ Built with a modern visual design, premium typography, and responsive grid layou
 This clone represents a clean, modular, client-only architecture split to optimize maintainability, load speeds, and local playability.
 
 ```
-wordle-clone/
+crorstle/
 ├── index.html               # Main entry point (React UI & Game State)
 ├── LICENSE                  # MIT License
 ├── README.md                # Premium Documentation
@@ -68,7 +68,7 @@ Explore the dictionary engine here:
 
 ## 🎮 How to Play
 
-1. **Objective**: Find the hidden 5-letter word in **6 tries** (or **10 tries** in Beginner mode).
+1. **Objective**: Find the hidden 5-letter word in **6 tries**.
 2. **Action**: Type a valid 5-letter word and press **Enter** to submit.
 3. **Color Reveals**:
    - 🟩 **Green**: The letter is correct and in the correct spot.

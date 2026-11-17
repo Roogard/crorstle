@@ -2,8 +2,8 @@
 <html lang="en">
 <head>
   <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-  <title>Wordle Clone</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover" />
+  <title>Crorstle</title>
   
   <!-- CDNs for React and Babel Standalone (No build steps required to run) -->
   <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
@@ -33,16 +33,19 @@
     // DATE HELPERS (used for storage keys and the share text)
     // ============================================================
 
-    function getDayOfYear(date) {
-      const start = new Date(date.getFullYear(), 0, 0);
-      const diff = date - start;
-      const oneDay = 1000 * 60 * 60 * 24;
-      return Math.floor(diff / oneDay);
-    }
-
     function getTodayKey() {
       const d = new Date();
       return `${d.getFullYear()}-${d.getMonth()}-${d.getDate()}`;
+    }
+
+    const SITE_URL = 'https://roogard.github.io/crorstle';
+
+    // Puzzle 1 is the day Crorstle launched. Month is 0 based.
+    const EPOCH = Date.UTC(2026, 10, 16);
+
+    function getPuzzleNumber(date) {
+      const today = Date.UTC(date.getFullYear(), date.getMonth(), date.getDate());
+      return Math.floor((today - EPOCH) / 86400000) + 1;
     }
 
     // ============================================================
@@ -51,8 +54,39 @@
 
     // Visible grid width. A normal guess is this long.
     const WORD_LENGTH = 5;
-    const ANSWER = "CRORST";
-    // Longest guess the player may type, including the secret 6th letter.
+    const FULL_ANSWER = "CRORST";
+
+    // ============================================================
+    // DAILY ANSWER
+    // Half of all days the answer is the full six letter CRORST and the
+    // secret 6th letter is in play. The other half it is one of the 360
+    // five letter arrangements of those letters, and strict Wordle rules
+    // apply: five letter guesses only, exact match to win.
+    // ============================================================
+
+    // Small seeded PRNG (mulberry32) so every player gets the same answer
+    // on a given day.
+    function seededRandom(seed) {
+      return function () {
+        seed |= 0; seed = seed + 0x6D2B79F5 | 0;
+        let t = Math.imul(seed ^ seed >>> 15, 1 | seed);
+        t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+        return ((t ^ t >>> 14) >>> 0) / 4294967296;
+      };
+    }
+
+    function getDailyAnswer(puzzleNumber) {
+      // Golden ratio multiplier spreads consecutive puzzle numbers apart
+      // so the coin flip does not cluster on the first days after launch.
+      const rand = seededRandom(Math.imul(puzzleNumber, 0x9E3779B9) + 12);
+      if (rand() < 0.5) return FULL_ANSWER;
+      return CUSTOM_WORDS[Math.floor(rand() * CUSTOM_WORDS.length)];
+    }
+
+    const PUZZLE_NUMBER = getPuzzleNumber(new Date());
+    const ANSWER = getDailyAnswer(PUZZLE_NUMBER);
+    // Longest guess the player may type. Only a CRORST day allows the
+    // secret 6th letter; on a five letter day the row is capped at five.
     const MAX_GUESS_LENGTH = ANSWER.length;
 
     // ============================================================
@@ -124,53 +158,41 @@
     // LOCAL STORAGE KEYS & STATS
     // ============================================================
 
-    const MODE_KEY = 'wordle-mode';
+    const MAX_GUESSES = 6;
+    const STATS_KEY = 'wordle-stats-normal';
 
-    function loadMode() {
-      return localStorage.getItem(MODE_KEY) || 'normal';
+    function getStateKey() {
+      return `crorstle-state-${getTodayKey()}`;
     }
 
-    function saveMode(m) {
-      try { localStorage.setItem(MODE_KEY, m); } catch {}
-    }
-
-    function getStateKey(mode) {
-      return `wordle-state-${mode}-${getTodayKey()}`;
-    }
-
-    function getStatsKey(mode) {
-      return `wordle-stats-${mode}`;
-    }
-
-    function loadGameStateForMode(mode) {
+    function loadGameState() {
       try {
-        const raw = localStorage.getItem(getStateKey(mode));
+        const raw = localStorage.getItem(getStateKey());
         return raw ? JSON.parse(raw) : null;
       } catch { return null; }
     }
 
-    function saveGameStateForMode(mode, state) {
+    function saveGameState(state) {
       try {
-        localStorage.setItem(getStateKey(mode), JSON.stringify(state));
+        localStorage.setItem(getStateKey(), JSON.stringify(state));
       } catch {}
     }
 
-    function defaultStats(mode) {
+    function defaultStats() {
       const dist = {};
-      const max = mode === 'beginner' ? 10 : 6;
-      for (let i = 1; i <= max; i++) dist[i] = 0;
+      for (let i = 1; i <= MAX_GUESSES; i++) dist[i] = 0;
       return { played: 0, won: 0, currentStreak: 0, maxStreak: 0, distribution: dist, lastWonDate: null };
     }
 
-    function loadStatsForMode(mode) {
+    function loadStats() {
       try {
-        const raw = localStorage.getItem(getStatsKey(mode));
-        return raw ? JSON.parse(raw) : defaultStats(mode);
-      } catch { return defaultStats(mode); }
+        const raw = localStorage.getItem(STATS_KEY);
+        return raw ? JSON.parse(raw) : defaultStats();
+      } catch { return defaultStats(); }
     }
 
-    function saveStatsForMode(mode, stats) {
-      try { localStorage.setItem(getStatsKey(mode), JSON.stringify(stats)); } catch {}
+    function saveStats(stats) {
+      try { localStorage.setItem(STATS_KEY, JSON.stringify(stats)); } catch {}
     }
 
     // ============================================================
@@ -195,14 +217,11 @@
     const { useState, useEffect, useCallback, useRef } = React;
 
     function App() {
-      // Mode: 'normal' (6 guesses) or 'beginner' (10 guesses)
-      const initialMode = loadMode();
-      const [mode, setMode] = useState(initialMode);
-      const maxGuesses = mode === 'beginner' ? 10 : 6;
+      const maxGuesses = MAX_GUESSES;
 
-      // Initialize game state from correct mode's localStorage slot
-      const initState = (m) => {
-        const saved = loadGameStateForMode(m);
+      // Initialize game state from today's localStorage slot
+      const initState = () => {
+        const saved = loadGameState();
         if (saved) return saved;
         return {
           guesses: [],
@@ -211,13 +230,13 @@
         };
       };
 
-      const [guesses, setGuesses] = useState(() => initState(initialMode).guesses);
-      const [currentGuess, setCurrentGuess] = useState(() => initState(initialMode).currentGuess);
-      const [gameStatus, setGameStatus] = useState(() => initState(initialMode).gameStatus);
+      const [guesses, setGuesses] = useState(() => initState().guesses);
+      const [currentGuess, setCurrentGuess] = useState(() => initState().currentGuess);
+      const [gameStatus, setGameStatus] = useState(() => initState().gameStatus);
 
       // Key letter states for on-screen keyboard coloring
       const [keyStates, setKeyStates] = useState(() => {
-        const saved = loadGameStateForMode(initialMode);
+        const saved = loadGameState();
         if (saved && saved.keyStates) return saved.keyStates;
         return {};
       });
@@ -229,7 +248,7 @@
       
       // revealedCells[r][c] = true when that tile's color should be shown
       const [revealedCells, setRevealedCells] = useState(() => {
-        const saved = loadGameStateForMode(initialMode);
+        const saved = loadGameState();
         if (saved && saved.revealedCells) return saved.revealedCells;
         return saved ? saved.guesses.map(g => Array(g.length).fill(true)) : [];
       });
@@ -241,8 +260,7 @@
       // Toasts
       const [toasts, setToasts] = useState([]);
 
-      // Stats (mode-specific)
-      const [stats, setStats] = useState(() => loadStatsForMode(initialMode));
+      const [stats, setStats] = useState(() => loadStats());
 
       // Countdown
       const [countdown, setCountdown] = useState(getTimeUntilMidnight());
@@ -250,8 +268,8 @@
       // -------- Persistence --------
       useEffect(() => {
         const state = { guesses, currentGuess, gameStatus, keyStates, revealedCells };
-        saveGameStateForMode(mode, state);
-      }, [guesses, currentGuess, gameStatus, keyStates, revealedCells, mode]);
+        saveGameState(state);
+      }, [guesses, currentGuess, gameStatus, keyStates, revealedCells]);
 
       // Countdown ticker
       useEffect(() => {
@@ -266,30 +284,6 @@
           return () => clearTimeout(t);
         }
       }, [gameStatus]);
-
-      // -------- Mode toggle --------
-      const toggleMode = useCallback(() => {
-        const newMode = mode === 'normal' ? 'beginner' : 'normal';
-        saveMode(newMode);
-        
-        // Load saved state for the new mode (or start fresh)
-        const saved = loadGameStateForMode(newMode);
-        const fresh = { guesses: [], currentGuess: '', gameStatus: 'playing', keyStates: {}, revealedCells: [] };
-        const s = saved || fresh;
-        
-        setMode(newMode);
-        setGuesses(s.guesses || []);
-        setCurrentGuess(s.currentGuess || '');
-        setGameStatus(s.gameStatus || 'playing');
-        setKeyStates(s.keyStates || {});
-        setRevealedCells(s.revealedCells || (s.guesses || []).map(g => Array(g.length).fill(true)));
-        setStats(loadStatsForMode(newMode));
-        setToasts([]);
-        setShowStats(false);
-        setShakingRow(null);
-        setFlippingRow(null);
-        setBounceRow(null);
-      }, [mode]);
 
       // -------- Toast helpers --------
       const showToast = useCallback((msg, persist = false) => {
@@ -396,7 +390,7 @@
             newStats.maxStreak = Math.max(newStats.maxStreak, newStats.currentStreak);
             newStats.lastWonDate = today;
             setStats(newStats);
-            saveStatsForMode(mode, newStats);
+            saveStats(newStats);
           } else if (isLoss) {
             showToast(ANSWER, true);
             setGameStatus('lost');
@@ -406,10 +400,10 @@
             newStats.played++;
             newStats.currentStreak = 0;
             setStats(newStats);
-            saveStatsForMode(mode, newStats);
+            saveStats(newStats);
           }
         }, word.length * 300 + 200);
-      }, [currentGuess, guesses, gameStatus, showToast, updateKeyStates, stats, mode, maxGuesses]);
+      }, [currentGuess, guesses, gameStatus, showToast, updateKeyStates, stats, maxGuesses]);
 
       // -------- Handle key input --------
       const handleKey = useCallback((key) => {
@@ -437,16 +431,14 @@
 
       // -------- Share --------
       const handleShare = useCallback(() => {
-        const dayNum = getDayOfYear(new Date());
         const guessCount = gameStatus === 'won' ? guesses.length : 'X';
-        const modeTag = mode === 'beginner' ? ' [Beginner]' : '';
-        const header = `Wordle Clone ${dayNum}${modeTag} ${guessCount}/${maxGuesses}`;
+        const header = `Crorstle ${PUZZLE_NUMBER} ${guessCount}/${maxGuesses}`;
         const green  = String.fromCodePoint(0x1F7E9); // green square
         const yellow = String.fromCodePoint(0x1F7E8); // yellow square
         const black  = String.fromCodePoint(0x2B1B);  // black square
         const emojiMap = { correct: green, present: yellow, absent: black };
         const rows = guesses.map(row => row.map(e => emojiMap[e.state]).join('')).join('\n');
-        const text = `${header}\n\n${rows}`;
+        const text = `${header}\n\n${rows}\n\n${SITE_URL}`;
         
         if (navigator.clipboard && navigator.clipboard.writeText) {
           navigator.clipboard.writeText(text).then(() => showToast('Copied to clipboard!'));
@@ -460,7 +452,7 @@
           document.body.removeChild(ta);
           showToast('Copied to clipboard!');
         }
-      }, [guesses, gameStatus, showToast, mode, maxGuesses]);
+      }, [guesses, gameStatus, showToast, maxGuesses]);
 
       // -------- Render board --------
       const renderBoard = () => {
@@ -585,7 +577,7 @@
           <div className="modal-overlay" onClick={(e) => { if (e.target === e.currentTarget) setShowStats(false); }}>
             <div className="modal">
               <button className="modal-close" onClick={() => setShowStats(false)}>x</button>
-              <h2>STATISTICS{mode === 'beginner' ? ' - BEGINNERS' : ''}</h2>
+              <h2>STATISTICS</h2>
               <div className="stats-grid">
                 {[
                   [stats.played, 'Played'],
@@ -622,7 +614,7 @@
               </div>
               <div className="stats-footer">
                 <div className="countdown-section">
-                  <div className="countdown-label">NEXT WORDLE</div>
+                  <div className="countdown-label">NEXT CRORSTLE</div>
                   <div className="countdown-time">{countdown}</div>
                 </div>
                 {gameStatus !== 'playing' && (
@@ -643,7 +635,7 @@
             <button className="modal-close" onClick={() => setShowHelp(false)}>x</button>
             <h2>HOW TO PLAY</h2>
             <div className="help-section">
-              Guess the <strong>WORDLE</strong> in 6 tries (or 10 in Beginner mode).
+              Guess the <strong>CRORSTLE</strong> in 6 tries.
               <br /><br />
               Each guess must be a valid 5-letter word. Hit the enter button to submit.
               <br /><br />
@@ -688,22 +680,6 @@
         <>
           {/* Header */}
           <div className="header">
-            {/* Mode toggle pill — left side */}
-            <div className="mode-toggle">
-              <button
-                className={`mode-btn${mode === 'normal' ? ' active-normal' : ''}`}
-                onClick={() => mode !== 'normal' && toggleMode()}
-              >
-                Normal
-              </button>
-              <button
-                className={`mode-btn${mode === 'beginner' ? ' active-beginner' : ''}`}
-                onClick={() => mode !== 'beginner' && toggleMode()}
-              >
-                Beginner
-              </button>
-            </div>
-
             <div className="header-title">Crorstle</div>
 
             <div className="header-icons">
