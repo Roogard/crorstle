@@ -85,9 +85,9 @@
 
     const PUZZLE_NUMBER = getPuzzleNumber(new Date());
     const ANSWER = getDailyAnswer(PUZZLE_NUMBER);
-    // Longest guess the player may type. Only a CRORST day allows the
-    // secret 6th letter; on a five letter day the row is capped at five.
-    const MAX_GUESS_LENGTH = ANSWER.length;
+    // Longest guess the player may type. The secret 6th letter can always be
+    // typed. On a five letter day it can turn yellow but never green.
+    const MAX_GUESS_LENGTH = FULL_ANSWER.length;
 
     // ============================================================
     // EVALUATION LOGIC
@@ -138,6 +138,25 @@
 
 
     function evaluateGuess(guess, answer) {
+      // Guess longer than the answer: score the leading letters normally, then
+      // mark each extra letter yellow if the answer still has an unused copy.
+      if (guess.length > answer.length) {
+        const head = scoreAgainstWindow(guess.slice(0, answer.length), answer);
+        const remaining = {};
+        for (const ch of answer) remaining[ch] = (remaining[ch] || 0) + 1;
+        for (const { letter, state } of head) {
+          if (state !== 'absent') remaining[letter]--;
+        }
+        const extras = guess.slice(answer.length).split('').map(letter => {
+          if (remaining[letter] > 0) {
+            remaining[letter]--;
+            return { letter, state: 'present' };
+          }
+          return { letter, state: 'absent' };
+        });
+        return [...head, ...extras];
+      }
+
       let best = null;
       let bestScore = -1;
 
