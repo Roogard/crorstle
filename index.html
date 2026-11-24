@@ -58,8 +58,8 @@
 
     // ============================================================
     // DAILY ANSWER
-    // Half of all days the answer is the full six letter CRORST and the
-    // secret 6th letter is in play. The other half it is one of the 360
+    // 90% of days the answer is the full six letter CRORST and the
+    // secret 6th letter is in play. The other 10% it is one of the 360
     // five letter arrangements of those letters, and strict Wordle rules
     // apply: five letter guesses only, exact match to win.
     // ============================================================
@@ -79,7 +79,7 @@
       // Golden ratio multiplier spreads consecutive puzzle numbers apart
       // so the coin flip does not cluster on the first days after launch.
       const rand = seededRandom(Math.imul(puzzleNumber, 0x9E3779B9) + 12);
-      if (rand() < 0.5) return FULL_ANSWER;
+      if (rand() < 0.9) return FULL_ANSWER;
       return CUSTOM_WORDS[Math.floor(rand() * CUSTOM_WORDS.length)];
     }
 

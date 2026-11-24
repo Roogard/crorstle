@@ -7,8 +7,8 @@ Single game mode only. The old Beginner/Normal toggle is gone and the mode is ne
 ## Daily Answer
 
 - Puzzle number counts up from 1 starting 2026-11-16, and seeds a mulberry32 PRNG
-- 50% of days the answer is the full six letter CRORST and the secret 6th letter is in play
-- 50% of days the answer is one of the 360 five letter arrangements of C, O, R, R, S, T from CUSTOM_WORDS, with strict Wordle rules (five letter guesses, exact match to win)
+- 90% of days the answer is the full six letter CRORST and the secret 6th letter is in play
+- 10% of days the answer is one of the 360 five letter arrangements of C, O, R, R, S, T from CUSTOM_WORDS, with strict Wordle rules (five letter guesses, exact match to win)
 - Share text reads "Crorstle N x/6" plus the site URL
 
 ## File Structure
